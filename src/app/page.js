@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Code2, Flame, Trophy, Users, BookOpen, Sparkles } from "lucide-react";
+import Image from "next/image";
+// import logo from '../../public/logo.png'
 
 export default function LandingPage() {
   return (
@@ -21,7 +23,8 @@ export default function LandingPage() {
           transition={{ duration: 0.7 }}
           className="text-5xl md:text-7xl font-extrabold tracking-tight"
         >
-          Code<span className="text-red-500">Slayer</span>
+          Code<span className="text-red-500">Slayer</span> 
+          {/* <Image src={logo} width={100} height={100} /> */}
         </motion.h1>
 
         <motion.p
