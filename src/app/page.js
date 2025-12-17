@@ -2,9 +2,16 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Code2, Flame, Trophy, Users, BookOpen, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Code2,
+  Flame,
+  Trophy,
+  Users,
+  BookOpen,
+  Sparkles,
+} from "lucide-react";
 import Image from "next/image";
-// import logo from '../../public/logo.png'
 
 export default function LandingPage() {
   return (
@@ -17,15 +24,26 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center text-center px-6 pt-36 pb-28">
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="text-5xl md:text-7xl font-extrabold tracking-tight"
-        >
-          Code<span className="text-red-500">Slayer</span> 
-          {/* <Image src={logo} width={100} height={100} /> */}
-        </motion.h1>
+<motion.h1
+  initial={{ opacity: 0, y: 30 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.7 }}
+  className="text-5xl md:text-7xl font-extrabold tracking-tight flex items-center justify-center gap-3"
+>
+  <span>Code</span>
+
+  <span className="flex items-center gap-2 text-red-500">
+    <span>Slayer</span>
+    <Image
+      src="/logo.png"
+      alt="logo"
+      width={160}
+      height={160}
+      className="inline-block"
+    />
+  </span>
+</motion.h1>
+
 
         <motion.p
           initial={{ opacity: 0, y: 30 }}
@@ -97,7 +115,9 @@ export default function LandingPage() {
 
       {/* How it Works */}
       <section className="bg-zinc-900/60 py-24 px-6">
-        <h2 className="text-4xl font-bold text-center mb-14">How CodeSlayer Works</h2>
+        <h2 className="text-4xl font-bold text-center mb-14">
+          How CodeSlayer Works
+        </h2>
         <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
           <Step
             icon={<BookOpen />}
@@ -119,9 +139,12 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="px-6 py-28 text-center">
-        <h2 className="text-4xl md:text-5xl font-bold">Become Interview Ready</h2>
+        <h2 className="text-4xl md:text-5xl font-bold">
+          Become Interview Ready
+        </h2>
         <p className="mt-5 text-zinc-300 text-lg max-w-2xl mx-auto">
-          Build consistency, master DSA fundamentals, and level up your problem-solving mindset.
+          Build consistency, master DSA fundamentals, and level up your
+          problem-solving mindset.
         </p>
         <Link
           href="/register"

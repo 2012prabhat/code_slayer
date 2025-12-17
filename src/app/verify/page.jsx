@@ -5,7 +5,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useRef, useState } from "react";
 import { ShieldCheck } from "lucide-react";
-import api from "@/lib/axiosInstance";
+import api from "@/lib/api";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -23,7 +23,7 @@ export default function VerifyOtpPage() {
 
   const searchParams = useSearchParams();
   const initialOtp = searchParams.get("otp") || "";
-
+  const email = searchParams.get("email") || localStorage.getItem('registrationEmail');
   const inputRefs = useRef([]);
 
   const formik = useFormik({
@@ -39,6 +39,7 @@ export default function VerifyOtpPage() {
       try {
         await api.post("/auth/verify", {
           otp: values.otp,
+          email:email
         });
 
         setSuccessMsg("Your account has been verified successfully! 🎉");
