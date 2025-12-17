@@ -1,11 +1,9 @@
 import nodemailer from "nodemailer";
 
-export const sendVerificationEmail = async (email, otp) => {
+export const sendVerificationEmail = async (email, otp, url) => {
   try {
-    // Create a transporter
-    // For Gmail, you might need an "App Password" (not your login password)
     const transporter = nodemailer.createTransport({
-      service: "gmail", 
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -16,7 +14,15 @@ export const sendVerificationEmail = async (email, otp) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: "Verify your CodeSlayer Account",
-      html: `<p>Your verification code is: <b>${otp}</b></p><p>This code expires in 1 hour.</p>`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Verification Required</h2>
+          <p>Your verification code is: <b style="font-size: 18px;">${otp}</b></p>
+          <p>Or click the link below to verify automatically:</p>
+          <a href="${url}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Account</a>
+          <p>This code expires in 1 hour.</p>
+        </div>
+      `,
     };
 
     await transporter.sendMail(mailOptions);

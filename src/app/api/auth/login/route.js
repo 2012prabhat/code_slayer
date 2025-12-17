@@ -17,9 +17,13 @@ export async function POST(request) {
 
     // 2. Validate Input
     const validation = loginSchema.safeParse(body);
+
     if (!validation.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: validation.error.flatten().fieldErrors },
+        { 
+          error: "Validation failed", 
+          details: validation.error.flatten().fieldErrors 
+        },
         { status: 400 }
       );
     }
@@ -30,28 +34,42 @@ export async function POST(request) {
 
     // 3. Find User
     const user = await User.findOne({ email });
+
+    // GENERIC ERROR: Use the same error for "User not found" and "Wrong Password"
+    // This prevents hackers from guessing which emails are registered.
     if (!user) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
     }
 
-    // 4. Check Verification Status (NEW)
+    // 4. Check Verification Status (CRITICAL)
+    // If they registered via Email but never entered the OTP, stop them here.
     if (!user.isVerified) {
       return NextResponse.json(
         { 
           error: "Email not verified. Please verify your email.",
-          notVerified: true // Helpful flag for frontend to redirect to OTP page
+          notVerified: true // Frontend can use this flag to redirect to OTP page
         }, 
-        { status: 403 }
+        { status: 403 } // 403 Forbidden
       );
     }
 
-    // 5. Check Password
+    // 5. Verify Password
+    // Note: If this is a Google user, they have a random password. 
+    // bcrypt.compare will simply return false here, which is correct behavior.
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
     }
 
-    // 6. Generate Token
+    // 6. Generate JWT Token
+    // This is the "Session Key" they will use to access protected routes.
     const tokenData = {
       id: user._id,
       username: user.username,
@@ -62,16 +80,17 @@ export async function POST(request) {
       expiresIn: "7d",
     });
 
-    // 7. Return Success
+    // 7. Return Response
     return NextResponse.json({
       message: "Login successful",
       success: true,
-      token,
+      token, // Frontend stores this (usually in localStorage)
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        provider: user.provider
       }
     }, { status: 200 });
 
