@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Problem from "@/models/Problem";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request, { params }) {
   try {
     // --- THE FIX IS HERE ---
     // In Next.js 15, params is a Promise, so we must await it first.
-    const { slug } = await params; 
+    const { slug } = await params;
 
     await connectDB();
 
