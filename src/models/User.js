@@ -40,6 +40,19 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false // Everyone starts as a normal user by default
   },
+
+// We store the _id of the problems here
+  likedProblems: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Problem"
+  }],
+  
+  // Optional: Quick counter for solved problems
+  solvedProblems: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Problem"
+  }]
+
 }, { timestamps: true });
 
 // Prevent model overwrite upon hot-reload in Next.js
