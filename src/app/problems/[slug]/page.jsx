@@ -23,7 +23,7 @@ export default function ProblemSlugPage() {
         const res = await api.get(`/problems/${slug}`);
         if (res.data?.problem) {
           setProblem(res.data.problem);
-          setUserCode(res.data.problem.starterCode || "");
+          setUserCode(res.data.problem.starterCodes.javascript || "");
         }
       } catch (err) { console.error(err); }
       finally { setLoading(false); }
@@ -31,60 +31,12 @@ export default function ProblemSlugPage() {
     fetchProblem();
   }, [slug]);
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     setIsRunning(true);
-    setResults([]); // Clear previous results
-
-    // Small timeout to simulate network/processing delay for "Slayer" feel
-    setTimeout(() => {
-      const testResults = [];
-      try {
-        // 1. Transform the code string into an executable function
-        // We assume the user code starts with "function solution(...) { ..." or similar
-        // We create a wrapper to evaluate it
-        const userFn = new Function(`return ${userCode}`)();
-
-        problem.examples.forEach((example, index) => {
-          try {
-            // 2. Parse Input (e.g., "nums = [2,7,11], target = 9")
-            // This regex finds values after '=' and parses them
-            const inputParts = example.inputText.split(",").map(part => {
-              const value = part.split("=")[1].trim();
-              return JSON.parse(value);
-            });
-
-            // 3. Execute
-            const startTime = performance.now();
-            const actualOutput = userFn(...inputParts);
-            const endTime = performance.now();
-
-            // 4. Compare with Expected
-            const expectedOutput = JSON.parse(example.outputText);
-            const passed = JSON.stringify(actualOutput) === JSON.stringify(expectedOutput);
-
-            testResults.push({
-              case: index + 1,
-              passed,
-              expected: example.outputText,
-              actual: JSON.stringify(actualOutput),
-              runtime: (endTime - startTime).toFixed(2)
-            });
-          } catch (err) {
-            testResults.push({
-              case: index + 1,
-              passed: false,
-              error: err.message,
-              expected: example.outputText,
-            });
-          }
-        });
-        setResults(testResults);
-      } catch (globalErr) {
-        setResults([{ case: "Syntax", passed: false, error: "Compilation Error: " + globalErr.message }]);
-      } finally {
-        setIsRunning(false);
-      }
-    }, 600);
+    const resp = await api.post(`/run`, { slug,code: userCode,language: "javascript" });
+    const data = resp.data;
+    setResults(data);
+    setIsRunning(false);
   };
 
   if (loading) return (
