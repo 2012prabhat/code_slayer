@@ -5,16 +5,24 @@ import { Code2, Terminal, ChevronUp, CheckCircle2, XCircle, Timer } from "lucide
 
 export default function CodeArenaEditor({ code, onChange, slug, examples, results, isRunning }) {
   const [consoleOpen, setConsoleOpen] = useState(false);
+  const [progLang,setProgLang] = useState(['javascript','java','python'])
 
 
   return (
     <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
       {/* Editor Tab Header */}
       <div className="h-10 bg-[#252525] flex items-center px-4 justify-between border-b border-white/5">
-        <div className="flex items-center gap-2 text-mainCol">
+      <div className="flex justify-between w-full">
+ <div className="flex items-center gap-2 text-mainCol">
           <Code2 size={14} />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Solution.js</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em]">Solution</span>
         </div>
+        <select name="" id="" className="border p-1 text-white font-bolder  bg-[#252525]">
+          {progLang.map((m)=> <option key={m} value={m}>{m}</option>)}
+        </select>
+      </div>
+       
+        
         {isRunning && (
           <div className="flex items-center gap-2 text-zinc-500 animate-pulse">
             <Timer size={12} />

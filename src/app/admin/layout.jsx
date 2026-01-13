@@ -47,6 +47,14 @@ export default function AdminLayout({ children }) {
     },
   ];
 
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if(!mounted) return null;
+
   const drawerWidth = open ? DRAWER_OPEN_WIDTH : DRAWER_CLOSED_WIDTH;
 
   return (
