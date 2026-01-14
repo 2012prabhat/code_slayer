@@ -2,12 +2,16 @@
 import { useState } from "react";
 import Editor from "@monaco-editor/react";
 import { Code2, Terminal, ChevronUp, CheckCircle2, XCircle, Timer } from "lucide-react";
+import ErrorModal from "./ErrorModal";
 
-export default function CodeArenaEditor({ code, onChange, slug, examples, results, isRunning }) {
+export default function CodeArenaEditor({ code, onChange, slug, examples, results, isRunning, selectedLang, setOpen, setTempLang }) {
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [progLang,setProgLang] = useState(['javascript','java','python'])
 
-
+  const changeLanguage = (e)=>{
+    setTempLang(e.target.value)
+    setOpen(true);
+  }
   return (
     <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
       {/* Editor Tab Header */}
@@ -17,7 +21,7 @@ export default function CodeArenaEditor({ code, onChange, slug, examples, result
           <Code2 size={14} />
           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Solution</span>
         </div>
-        <select name="" id="" className="border p-1 text-white font-bolder  bg-[#252525]">
+        <select value={selectedLang} onChange={(e)=>changeLanguage(e)} className="border p-1 text-white font-bolder  bg-[#252525]">
           {progLang.map((m)=> <option key={m} value={m}>{m}</option>)}
         </select>
       </div>
@@ -34,11 +38,12 @@ export default function CodeArenaEditor({ code, onChange, slug, examples, result
       {/* Monaco Editor */}
       <div className="flex-1">
         <Editor
-          height="100%"
-          defaultLanguage="javascript"
+          height="80%"
+          defaultLanguage='javascript'
           theme="vs-dark"
           value={code}
           onChange={onChange}
+          language={selectedLang}
           options={{
             minimap: { enabled: false },
             fontSize: 14,
@@ -65,21 +70,22 @@ export default function CodeArenaEditor({ code, onChange, slug, examples, result
         </span>
       </div>
     ) : (
-      <div className="flex items-center gap-2 text-red-400">
+      <div className="flex justify-between w-full">
+          <div className="flex items-center gap-2 text-red-400">
         <XCircle size={14} />
         <span className="text-[11px] font-bold uppercase tracking-widest">
           Failed
         </span>
       </div>
+      </div>
+    
     )}
 
-    {results.message && (
-      <span className="ml-4 text-[11px] text-zinc-400">
-        {results.message}
-      </span>
-    )}
+    {(results.message || results.status) && <ErrorModal message={results.message || results.status} /> }
   </div>
 )}
+
+
 
     
     </div>

@@ -5,6 +5,17 @@ import api from "@/lib/api";
 import ArenaNavbar from "./ArenaNavbar";
 import ProblemDescription from "./ProblemDescription";
 import CodeArenaEditor from "./CodeArenaEditor";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ProblemSlugPage() {
   const { slug } = useParams();
@@ -16,7 +27,11 @@ export default function ProblemSlugPage() {
   // --- Execution State ---
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState([]);
-  const [selectedLang, setSelectedLang] = useState('javascript');
+  const [selectedLang, setSelectedLang] = useState("javascript");
+  const [starterCodes, setStarterCodes] = useState();
+
+  const [open, setOpen] = useState(false);
+  const [tempLang, setTempLang] = useState(null);
 
   useEffect(() => {
     const fetchProblem = async () => {
@@ -24,6 +39,7 @@ export default function ProblemSlugPage() {
         const res = await api.get(`/problems/${slug}`);
         if (res.data?.problem) {
           setProblem(res.data.problem);
+          setStarterCodes(res.data.problem.starterCodes);
           setUserCode(res.data.problem.starterCodes[selectedLang] || "");
         }
       } catch (err) {
@@ -34,6 +50,14 @@ export default function ProblemSlugPage() {
     };
     fetchProblem();
   }, [slug]);
+
+  // useEffect(() => {
+  //   setOpen(true)
+  //   if(userConfirmed){
+  //     setUserCode(starterCodes?.[selectedLang]);
+  //     setUserConfirmed(false)
+  //   }
+  // }, [selectedLang]);
 
   const handleRunCode = async () => {
     setIsRunning(true);
@@ -47,12 +71,22 @@ export default function ProblemSlugPage() {
       setResults(data);
     } catch (err) {
       setResults({
-        status:err?.response?.data?.error
-      })
+        status: err?.response?.data?.error,
+      });
       console.log(err);
     }
 
     setIsRunning(false);
+  };
+
+  const handleConfirm = () => {
+    setSelectedLang(tempLang);
+    setUserCode(starterCodes?.[tempLang]);
+    setOpen(false);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
   };
 
   if (loading)
@@ -91,12 +125,36 @@ export default function ProblemSlugPage() {
         {/* Pass results and isRunning state to the Editor */}
         <CodeArenaEditor
           code={userCode}
+          selectedLang={selectedLang}
           onChange={setUserCode}
           slug={slug}
           results={results}
           isRunning={isRunning}
+          setOpen={setOpen}
+          setTempLang={setTempLang}
         />
       </main>
+
+      {/* language change confirmation */}
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        {/* <AlertDialogTrigger>Open</AlertDialogTrigger> */}
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Changing the programming language will delete your current code.
+              Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
