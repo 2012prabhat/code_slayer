@@ -20,9 +20,9 @@ export async function POST(request) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { 
-          error: "Validation failed", 
-          details: validation.error.flatten().fieldErrors 
+        {
+          error: "Validation failed",
+          details: validation.error.flatten().fieldErrors
         },
         { status: 400 }
       );
@@ -48,10 +48,10 @@ export async function POST(request) {
     // If they registered via Email but never entered the OTP, stop them here.
     if (!user.isVerified) {
       return NextResponse.json(
-        { 
+        {
           error: "Email not verified. Please verify your email.",
           notVerified: true // Frontend can use this flag to redirect to OTP page
-        }, 
+        },
         { status: 403 } // 403 Forbidden
       );
     }
@@ -74,6 +74,7 @@ export async function POST(request) {
       id: user._id,
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin,
     };
 
     const token = jwt.sign(tokenData, process.env.JWT_SECRET, {
@@ -90,6 +91,7 @@ export async function POST(request) {
         username: user.username,
         email: user.email,
         isVerified: user.isVerified,
+        isAdmin: user.isAdmin,
         provider: user.provider
       }
     }, { status: 200 });
