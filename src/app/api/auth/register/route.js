@@ -47,7 +47,7 @@ export async function POST(request) {
           user = new User({
             username: name,
             email: email,
-            password: hashedPassword, 
+            password: hashedPassword,
             isVerified: true, // Google verifies emails automatically
             provider: "google",
           });
@@ -65,17 +65,37 @@ export async function POST(request) {
 
         // 4. Generate JWT
         const token = jwt.sign(
-          { id: user._id, username: user.username, email: user.email },
+          {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            isAdmin: user.isAdmin
+          },
           process.env.JWT_SECRET,
           { expiresIn: "7d" }
         );
 
-        return NextResponse.json({
+        const response = NextResponse.json({
           message: "Google Login Successful",
           success: true,
           token,
-          user: { id: user._id, username: user.username, email: user.email, isVerified: true }
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            isVerified: true,
+            isAdmin: user.isAdmin
+          }
         }, { status: 200 });
+
+        response.cookies.set("token", token, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 24 * 60 * 60 // 7 days
+        });
+
+        return response;
 
       } catch (err) {
         console.error("Google Auth Error:", err);
@@ -86,7 +106,7 @@ export async function POST(request) {
     // ============================================================
     // FLOW B: STANDARD EMAIL REGISTRATION (Requires OTP)
     // ============================================================
-    
+
     // 1. Validate Input
     const validation = registerSchema.safeParse(body);
     if (!validation.success) {
@@ -112,10 +132,10 @@ export async function POST(request) {
       // Spam Cooldown Check (1 Minute)
       const lastUpdated = new Date(existingUser.updatedAt).getTime();
       const now = Date.now();
-      if (now - lastUpdated < 60 * 1000) { 
+      if (now - lastUpdated < 60 * 1000) {
         return NextResponse.json(
           { error: "Please wait 1 minute before requesting another OTP." },
-          { status: 429 } 
+          { status: 429 }
         );
       }
     }

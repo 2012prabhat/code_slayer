@@ -10,6 +10,16 @@ export async function seedDatabase() {
     try {
         await connectDB();
 
+        // Drop the stale unique index on 'order' if it exists
+        // (This was removed from schema but old MongoDB index persists until manually dropped)
+        try {
+            await Problem.collection.dropIndex("order_1");
+            console.log("Dropped old unique index on 'order'");
+        } catch (indexErr) {
+            // Index doesn't exist – that's fine, continue
+            console.log("No 'order_1' index to drop, continuing...");
+        }
+
         // Clear old data to avoid duplicates
         await Problem.deleteMany({});
 
@@ -23,3 +33,4 @@ export async function seedDatabase() {
         return { success: false, error: error.message };
     }
 }
+

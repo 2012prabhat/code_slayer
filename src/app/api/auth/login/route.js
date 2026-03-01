@@ -82,7 +82,7 @@ export async function POST(request) {
     });
 
     // 7. Return Response
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: "Login successful",
       success: true,
       token, // Frontend stores this (usually in localStorage)
@@ -95,6 +95,15 @@ export async function POST(request) {
         provider: user.provider
       }
     }, { status: 200 });
+
+    response.cookies.set("token", token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 // 7 days
+    });
+
+    return response;
 
   } catch (error) {
     console.error("Login Error:", error);

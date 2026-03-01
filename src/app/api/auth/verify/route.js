@@ -59,13 +59,14 @@ export async function POST(request) {
       id: user._id,
       username: user.username,
       email: user.email,
+      isAdmin: user.isAdmin
     };
 
     const token = jwt.sign(tokenData, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       message: "Email verified successfully",
       success: true,
       token, // Frontend stores this
@@ -73,9 +74,19 @@ export async function POST(request) {
         id: user._id,
         username: user.username,
         email: user.email,
-        isVerified: true
+        isVerified: true,
+        isAdmin: user.isAdmin
       }
     }, { status: 200 });
+
+    response.cookies.set("token", token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 // 7 days
+    });
+
+    return response;
 
   } catch (error) {
     console.error("Verification Error:", error);

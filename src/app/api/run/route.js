@@ -3,13 +3,13 @@ import connectDB from "@/lib/db";
 import Problem from "@/models/Problem";
 import Submission from "@/models/Submission";
 import User from "@/models/User";
-import axios from "axios";
 import { headers } from "next/headers";
 import jwt from "jsonwebtoken";
+import vm from "vm";
 
 export async function POST(request) {
   try {
-    const { code, language, slug } = await request.json();
+    const { code, language, slug, isSubmit } = await request.json();
 
     // 1. GET USER ID (for saving history)
     const headersList = await headers();
@@ -32,68 +32,64 @@ export async function POST(request) {
       return NextResponse.json({ error: "Problem not found" }, { status: 404 });
     }
 
-    // 2. CONSTRUCT DRIVER CODE
-    const driverCode = `
-      ${code}
-      const testCases = ${JSON.stringify(problem.testCases)};
-      try {
-        testCases.forEach((test) => {
-          const result = ${problem.handlerFunction}.apply(null, test.input);
-          console.log(JSON.stringify(result));
-        });
-      } catch (error) {
-        console.error(error.message);
-      }
-    `;
+    if (language !== "javascript") {
+      return NextResponse.json({
+        status: "Runtime Error",
+        message: `Currently, only JavaScript code compilation is supported in this environment segment. You selected ${language}.`,
+        success: false
+      });
+    }
 
-    // 3. EXECUTE ON PISTON
-    const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
-      language: "javascript",
-      version: "18.15.0",
-      files: [{ content: driverCode }],
-    });
-
-    const { run } = response.data;
-
-    // 4. DETERMINE VERDICT (Create the "verdict" object)
+    // 4. DETERMINE VERDICT USING IN-BUILT NODE VM SANDBOX TO BYPASS PISTON WHITELIST
     let verdict = {
       status: "Accepted",
       message: "All test cases passed!",
       success: true,
-      runTime: "N/A" // Piston doesn't give function-only time easily
+      runTime: "N/A"
     };
 
-    // A) Check Runtime/Compile Errors
-    if (run.stderr) {
-      verdict = {
-        status: "Runtime Error",
-        message: run.stderr,
-        success: false
-      };
-    } else {
-      // B) Check Logic (Compare Outputs)
-      const outputs = run.stdout.split("\n").filter(line => line.trim() !== "");
+    const startTime = Date.now();
+    try {
+      // Intialize safe context object bounds
+      const sandbox = { Math, Number, String, Array, Object, Boolean };
+      vm.createContext(sandbox);
 
+      // Attempt parsing and loading user's function declarations into memory
+      vm.runInContext(code, sandbox, { timeout: 3000 });
+
+      // Let code iterate and apply test logic to the active handler dynamically!
       for (let i = 0; i < problem.testCases.length; i++) {
-        const expected = JSON.stringify(problem.testCases[i].output);
-        const actual = outputs[i];
+        const testCase = problem.testCases[i];
 
-        if (actual !== expected) {
+        const runtimeTester = `${problem.handlerFunction}.apply(null, ${JSON.stringify(testCase.input)})`;
+
+        // Execute the handler against specific test case mappings
+        const actualRaw = vm.runInContext(runtimeTester, sandbox, { timeout: 3000 });
+
+        if (JSON.stringify(actualRaw) !== JSON.stringify(testCase.output)) {
           verdict = {
             status: "Wrong Answer",
             message: `Test Case ${i + 1} Failed`,
-            input: problem.testCases[i].input,
-            expected: problem.testCases[i].output,
-            actual: actual ? JSON.parse(actual) : undefined,
+            input: testCase.input,
+            expected: testCase.output,
+            actual: actualRaw === undefined ? "undefined" : actualRaw,
             success: false
           };
-          break; // Stop checking after first failure
+          break;
         }
       }
+    } catch (err) {
+      verdict = {
+        status: "Runtime Error",
+        message: err.message || "Unknown Syntax or Runtime error exception.",
+        success: false
+      };
     }
+    const executionTime = Date.now() - startTime;
+    if (verdict.success) verdict.runTime = `${executionTime}ms`;
 
-    // 5. SAVE SUBMISSION TO DB
-    if (userId) {
+    // 5. SAVE SUBMISSION TO DB ONLY IF isSubmit == true
+    if (userId && isSubmit) {
       await Submission.create({
         userId,
         problemId: problem._id,

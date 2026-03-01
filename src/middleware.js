@@ -8,6 +8,7 @@ const publicPaths = [
     "/register",
     "/forgot-password",
     "/reset-password",
+    "/verify",
     "/api/auth/login",
     "/api/auth/register",
     "/api/auth/verify",
@@ -30,6 +31,15 @@ export async function middleware(request) {
     // Get token from cookies (which you'll need to set on login)
     const token = request.cookies.get("token")?.value;
 
+    // Check if the current path is public or an API route
+    const isPublic = publicPaths.includes(pathname);
+    const isApiRoute = pathname.startsWith("/api");
+
+    // Redirect to login if accessing a protected page without a token
+    if (!token && !isPublic && !isApiRoute) {
+        return NextResponse.redirect(new URL("/login", request.url));
+    }
+
     // 1. If hitting a protected admin route
     if (pathname.startsWith("/admin")) {
         if (!token) {
@@ -45,6 +55,7 @@ export async function middleware(request) {
             // If the user is NOT an admin from the token payload, they cannot be here. 
             // Note: we need to inject the `isAdmin` value in the token payload when we log the user in
             // For older tokens, this will be undefined and evaluate to false which is safe
+            console.log("Middleware payload", payload)
             if (!payload.isAdmin) {
                 return NextResponse.redirect(new URL("/problems", request.url));
             }
@@ -67,8 +78,6 @@ export async function middleware(request) {
 // Ensure middleware only runs on routes we want
 export const config = {
     matcher: [
-        "/admin/:path*",
-        "/login",
-        "/register",
+        "/((?!_next/static|_next/image|favicon.ico).*)",
     ],
 };

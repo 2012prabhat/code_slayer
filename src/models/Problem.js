@@ -5,11 +5,15 @@ const ProblemSchema = new mongoose.Schema({
   slug: { type: String, required: true, unique: true },
   difficulty: { type: String, enum: ["Easy", "Medium", "Hard"], required: true },
   category: { type: String, required: true },
-  order: { type: Number, required: true, unique: true },
+  order: { type: Number, required: true },
   videoId: { type: String, default: "" },
   description: { type: String, required: true },
-  starterCode: { type: String, required: true },
-  
+  starterCodes: {
+    javascript: { type: String, required: true },
+    python: { type: String, required: true },
+    java: { type: String, required: true }
+  },
+
   // Existing Examples (For display only)
   examples: [
     {
@@ -23,12 +27,12 @@ const ProblemSchema = new mongoose.Schema({
   constraints: [{ type: String, required: true }],
 
   // --- ADD THESE TWO NEW FIELDS ---
-  
+
   // 1. Function Name: Tells the runner what function to call (e.g., "twoSum")
-  handlerFunction: { 
-    type: String, 
-    required: true 
-  }, 
+  handlerFunction: {
+    type: String,
+    required: true
+  },
 
   // 2. Hidden Test Cases: The actual data we feed to the code
   testCases: [
@@ -41,6 +45,7 @@ const ProblemSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+delete mongoose.models.Problem;
 const Problem = mongoose.models.Problem || mongoose.model("Problem", ProblemSchema);
 
 export default Problem;

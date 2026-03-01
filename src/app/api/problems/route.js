@@ -10,9 +10,26 @@ export async function GET(request) {
   try {
     await connectDB();
 
+    // 0. CHECK USER PROGRESS IF AUTHENTICATED
+    const headersList = await headers();
+    const token = headersList.get("authorization")?.split(" ")[1];
+    let solvedProblems = [];
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select("solvedProblems");
+        if (user) {
+          solvedProblems = user.solvedProblems;
+        }
+      } catch (err) {
+        // Ignore token errors, just proceed as guest
+      }
+    }
+
     // 1. Get Search Params (e.g. ?page=1&difficulty=Medium)
     const { searchParams } = new URL(request.url);
-    
+
     const page = parseInt(searchParams.get("page")) || 1;
     const limit = parseInt(searchParams.get("limit")) || 10; // Default 20 problems per page
     const search = searchParams.get("search") || "";
@@ -46,8 +63,8 @@ export async function GET(request) {
         // --- CRITICAL OPTIMIZATION ---
         // We EXCLUDE (- field) heavy fields to save bandwidth.
         // We only fetch what we show on the card.
-        .select("-description -examples -constraints -starterCode -__v"),
-      
+        .select("-description -examples -constraints -starterCodes -__v"),
+
       Problem.countDocuments(query) // Get total for frontend pagination
     ]);
 
@@ -61,7 +78,8 @@ export async function GET(request) {
         page,
         pages: Math.ceil(total / limit),
         perPage: limit
-      }
+      },
+      solvedProblems
     }, { status: 200 });
 
   } catch (error) {
@@ -88,7 +106,7 @@ export async function POST(request) {
     }
 
     const token = authHeader.split(" ")[1];
-    
+
     // Verify Token
     let decoded;
     try {
@@ -123,6 +141,15 @@ export async function POST(request) {
 
   } catch (error) {
     console.error("Create Problem Error:", error);
+    // Handle MongoDB duplicate key errors gracefully
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      const value = error.keyValue[field];
+      return NextResponse.json(
+        { error: `Duplicate value: a problem with ${field} = '${value}' already exists. Please use a different value.` },
+        { status: 400 }
+      );
+    }
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
