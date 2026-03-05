@@ -14,7 +14,7 @@ const publicPaths = [
     "/api/auth/verify",
     "/api/auth/forgot-password",
     "/api/auth/reset-password",
-    "/_next/*"
+    "/_next/*",
     "/_next/image?url=%2Flogo.png&w=64&q=75"
 ];
 
